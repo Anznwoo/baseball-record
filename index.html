@@ -59,18 +59,54 @@
     
     /* 동적 스탯 그리드 레이아웃 */
     .ability-grid { display: grid; gap: 10px; margin-bottom: 20px; }
-    .grid-5 { grid-template-columns: repeat(3, 1fr); } /* 투수 5개 스탯 (3열) */
-    .grid-9 { grid-template-columns: repeat(3, 1fr); } /* 타자 9개 스탯 (3열) */
+    .grid-5 { grid-template-columns: repeat(3, 1fr); }
+    .grid-9 { grid-template-columns: repeat(3, 1fr); }
 
     .ability-box {
       background-color: #0d131f;
-      padding: 12px 8px;
+      padding: 10px 8px;
       border-radius: 8px;
       text-align: center;
       border: 1px solid #1a2332;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
-    .ability-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
-    .ability-val { font-size: 18px; font-weight: 800; color: #ffffff; }
+    .ability-label { font-size: 11px; color: #64748b; margin-bottom: 6px; }
+
+    /* ----------------------------------------------------
+       등급 뱃지 별 색상 스타일 (요청하신 색상 반영)
+    ---------------------------------------------------- */
+    .grade-badge {
+      display: inline-block;
+      width: 42px;
+      height: 28px;
+      line-height: 28px;
+      border-radius: 4px;
+      font-size: 18px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    /* G: 검은 배경 / 노란 글씨 */
+    .grade-G { background-color: #000000; color: #ffeb3b; border: 1px solid #333; }
+    /* Z: 보라색 배경 / 흰 글씨 */
+    .grade-Z { background-color: #6a1b9a; color: #ffffff; }
+    /* S: 주황/금색 배경 / 흰 글씨 (예시 이미지 상의 S등급 스타일) */
+    .grade-S { background-color: #c0ca33; color: #ffffff; }
+    /* A: 초록색 배경 / 흰 글씨 */
+    .grade-A { background-color: #2e7d32; color: #ffffff; }
+    /* B: 연한 파란색 배경 / 흰 글씨 */
+    .grade-B { background-color: #0288d1; color: #ffffff; }
+    /* C: 진한 파란색 배경 / 흰 글씨 */
+    .grade-C { background-color: #1565c0; color: #ffffff; }
+    /* D: 노란색(주황빛) 배경 / 흰 글씨 */
+    .grade-D { background-color: #f57f17; color: #ffffff; }
+    /* E: 검은색 배경 / 흰 글씨 */
+    .grade-E { background-color: #212121; color: #ffffff; border: 1px solid #424242; }
+    /* F: 빨간색 배경 / 흰 글씨 */
+    .grade-F { background-color: #d32f2f; color: #ffffff; }
 
     .season-record { text-align: center; border-top: 1px solid #232f42; padding-top: 14px; font-size: 14px; color: #94a3b8; }
     .season-record span { color: #ffffff; font-weight: 700; }
@@ -148,23 +184,32 @@
   <button class="download-btn" onclick="downloadImage()">이미지 저장하기</button>
 
   <script>
-    // 숫자 수치를 등급 문자열([G], [Z], [S]...)로 바꿔주는 변환 함수
-    function convertScoreToGrade(score) {
+    // 숫자 수치를 받아 알파벳 등급으로 변환
+    function getGradeLetter(score) {
       if (!score) return '-';
       const num = parseInt(score);
       
-      // 이미 [A] 같은 알파벳으로 들어온 경우 그대로 반환
-      if (isNaN(num)) return score;
+      if (isNaN(num)) {
+        // 이미 '[A]' 처럼 들어온 경우 대문자 알파벳만 추출
+        return score.replace(/\[|\]/g, '').toUpperCase();
+      }
 
-      if (num >= 19) return '[G]';
-      if (num >= 17) return '[Z]';
-      if (num >= 15) return '[S]';
-      if (num >= 13) return '[A]';
-      if (num >= 11) return '[B]';
-      if (num >= 9)  return '[C]';
-      if (num >= 7)  return '[D]';
-      if (num >= 5)  return '[E]';
-      return '[F]';
+      if (num >= 19) return 'G';
+      if (num >= 17) return 'Z';
+      if (num >= 15) return 'S';
+      if (num >= 13) return 'A';
+      if (num >= 11) return 'B';
+      if (num >= 9)  return 'C';
+      if (num >= 7)  return 'D';
+      if (num >= 5)  return 'E';
+      return 'F';
+    }
+
+    // 등급 문자 기반 HTML 뱃지 요소 생성
+    function createGradeBadgeHTML(score) {
+      const letter = getGradeLetter(score);
+      if (letter === '-') return '-';
+      return `<span class="grade-badge grade-${letter}">${letter}</span>`;
     }
 
     function parseURL() {
@@ -189,7 +234,7 @@
       document.getElementById('hp-bar').style.width = Math.min(100, Math.max(0, (curHp / maxHp) * 100)) + '%';
       document.getElementById('hp-cond').innerText = parts[7] || '보통';
 
-      // 3. 효율등급 및 포지션 판별 (예: "B-투" 또는 "A-타")
+      // 3. 효율등급 및 포지션
       const effAndPos = (parts[8] || 'B-투').split('-');
       document.getElementById('eff-grade').innerText = effAndPos[0] || 'B';
       const isPitcher = effAndPos[1] !== '타';
@@ -202,36 +247,36 @@
       let statCount = 0;
 
       if (isPitcher) {
-        // 투수 5대 스탯 (parts[9] ~ parts[13])
+        // 투수 5대 스탯
         statCount = 5;
         gridContainer.className = 'ability-grid grid-5';
         const pitcherStats = [
-          { label: '구삼진(K)', val: convertScoreToGrade(parts[9]) },
-          { label: '제구(BB)', val: convertScoreToGrade(parts[10]) },
-          { label: '피장타억제(HR)', val: convertScoreToGrade(parts[11]) },
-          { label: '투구수관리(EFF)', val: convertScoreToGrade(parts[12]) },
-          { label: '스태미나(STA)', val: convertScoreToGrade(parts[13]) }
+          { label: '구삼진(K)', val: createGradeBadgeHTML(parts[9]) },
+          { label: '제구(BB)', val: createGradeBadgeHTML(parts[10]) },
+          { label: '피장타억제(HR)', val: createGradeBadgeHTML(parts[11]) },
+          { label: '투구수관리(EFF)', val: createGradeBadgeHTML(parts[12]) },
+          { label: '스태미나(STA)', val: createGradeBadgeHTML(parts[13]) }
         ];
         pitcherStats.forEach(s => gridContainer.appendChild(createStatBox(s.label, s.val)));
       } else {
-        // 타자 9대 스탯 (parts[9] ~ parts[17])
+        // 타자 9대 스탯
         statCount = 9;
         gridContainer.className = 'ability-grid grid-9';
         const batterStats = [
-          { label: '컨택(CON)', val: convertScoreToGrade(parts[9]) },
-          { label: '홈런(HOM)', val: convertScoreToGrade(parts[10]) },
-          { label: '갭파워(GAP)', val: convertScoreToGrade(parts[11]) },
-          { label: '선구(BALL)', val: convertScoreToGrade(parts[12]) },
-          { label: '삼진회피(K)', val: convertScoreToGrade(parts[13]) },
-          { label: '주루(RUN)', val: convertScoreToGrade(parts[14]) },
-          { label: '도루(STL)', val: convertScoreToGrade(parts[15]) },
-          { label: '호수비(NDEF)', val: convertScoreToGrade(parts[16]) },
-          { label: '수비안정(EDEF)', val: convertScoreToGrade(parts[17]) }
+          { label: '컨택(CON)', val: createGradeBadgeHTML(parts[9]) },
+          { label: '홈런(HOM)', val: createGradeBadgeHTML(parts[10]) },
+          { label: '갭파워(GAP)', val: createGradeBadgeHTML(parts[11]) },
+          { label: '선구(BALL)', val: createGradeBadgeHTML(parts[12]) },
+          { label: '삼진회피(K)', val: createGradeBadgeHTML(parts[13]) },
+          { label: '주루(RUN)', val: createGradeBadgeHTML(parts[14]) },
+          { label: '도루(STL)', val: createGradeBadgeHTML(parts[15]) },
+          { label: '호수비(NDEF)', val: createGradeBadgeHTML(parts[16]) },
+          { label: '수비안정(EDEF)', val: createGradeBadgeHTML(parts[17]) }
         ];
         batterStats.forEach(s => gridContainer.appendChild(createStatBox(s.label, s.val)));
       }
 
-      // 5. 스탯 개수에 맞춘 인덱스 계산 (parts[9 + statCount] 위치부터 시즌기록 시작)
+      // 5. 스탯 개수에 맞춘 인덱스 계산
       const baseIndex = 9 + statCount;
 
       const traitAndAsset = (parts[baseIndex] || '0.00-없음-0원').split('-');
@@ -260,10 +305,10 @@
       }
     }
 
-    function createStatBox(label, value) {
+    function createStatBox(label, valueHtml) {
       const box = document.createElement('div');
       box.className = 'ability-box';
-      box.innerHTML = `<div class="ability-label">${label}</div><div class="ability-val">${value}</div>`;
+      box.innerHTML = `<div class="ability-label">${label}</div><div>${valueHtml}</div>`;
       return box;
     }
 
