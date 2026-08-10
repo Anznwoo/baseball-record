@@ -4,208 +4,93 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>스탯 카드 생성기</title>
-  <!-- html2canvas 라이브러리 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: #0d131f;
       color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 40px 20px;
     }
 
-    /* 전체 카드 컨테이너 (그리드 레이아웃) */
     #stat-card {
-      width: 900px;
+      width: 950px;
       background-color: #121927;
       border-radius: 16px;
       padding: 28px;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
       display: grid;
-      grid-template-columns: 1fr 1.3fr;
+      grid-template-columns: 1fr 1.4fr;
       gap: 20px;
       border: 1px solid #1e293b;
     }
 
-    /* 좌측/우측 컬럼 구조 */
-    .column {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+    .column { display: flex; flex-direction: column; gap: 16px; }
+    .card-box { background-color: #182232; border: 1px solid #232f42; border-radius: 12px; padding: 18px 20px; }
 
-    /* 섹션 기본 카드 스타일 */
-    .card-box {
-      background-color: #182232;
-      border: 1px solid #232f42;
-      border-radius: 12px;
-      padding: 18px 20px;
-    }
-
-    /* 헤더 영역 */
-    .header-box {
-      padding: 4px 4px 12px 4px;
-    }
+    /* 헤더 */
     .location { font-size: 14px; color: #8e9bb0; font-weight: 500; }
-    .datetime { font-size: 28px; font-weight: 800; margin: 4px 0 6px 0; color: #ffffff; letter-spacing: -0.5px; }
+    .datetime { font-size: 28px; font-weight: 800; margin: 4px 0 6px 0; color: #ffffff; }
     .next-tag { font-size: 15px; font-weight: 700; color: #38bdf8; }
-    .next-val { color: #d1d5db; font-weight: 600; }
 
-    /* 체력 관리 카드 */
-    .stamina-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .stamina-title { font-size: 16px; font-weight: 700; color: #ffffff; }
+    /* 체력 */
+    .stamina-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .stamina-title { font-size: 16px; font-weight: 700; }
     .stamina-num { font-size: 18px; font-weight: 800; color: #22c55e; }
-    .bar-bg {
-      width: 100%;
-      height: 14px;
-      background-color: #0d131f;
-      border-radius: 7px;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-    .bar-fill {
-      height: 100%;
-      background-color: #22c55e;
-      width: 0%;
-      border-radius: 7px;
-      transition: width 0.3s ease;
-    }
-    .stamina-footer {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      color: #94a3b8;
-    }
+    .bar-bg { width: 100%; height: 14px; background-color: #0d131f; border-radius: 7px; overflow: hidden; margin-bottom: 12px; }
+    .bar-fill { height: 100%; background-color: #22c55e; width: 0%; border-radius: 7px; }
+    .stamina-footer { display: flex; justify-content: space-between; font-size: 13px; color: #94a3b8; }
 
-    /* 섹션 공통 타이틀 */
-    .section-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #64748b;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
+    .section-title { font-size: 13px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; }
+    .activity-text { font-size: 16px; font-weight: 600; color: #f1f5f9; }
 
-    /* 최근 활동 */
-    .activity-text {
-      font-size: 16px;
-      font-weight: 600;
-      color: #f1f5f9;
-    }
+    .tag-container { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag { background-color: #263347; color: #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 13px; }
+    .tag.purple { background-color: #3b2d54; color: #c084fc; }
 
-    /* 태그 스타일 (트레잇, 아이템 등) */
-    .tag-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .tag {
-      background-color: #263347;
-      color: #cbd5e1;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .tag.purple {
-      background-color: #3b2d54;
-      color: #c084fc;
-    }
+    /* ABILITY 영역 */
+    .ability-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .position-badge { background-color: #332d1d; color: #eab308; border: 1px solid #713f12; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+    
+    /* 동적 스탯 그리드 */
+    .ability-grid { display: grid; gap: 10px; margin-bottom: 20px; }
+    .grid-5 { grid-template-columns: repeat(3, 1fr); } /* 투수 5개 (3열 배치) */
+    .grid-9 { grid-template-columns: repeat(3, 1fr); } /* 타자 9개 (3열 배치) */
 
-    /* 능력치(ABILITY) 영역 */
-    .ability-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    .position-badge {
-      background-color: #332d1d;
-      color: #eab308;
-      border: 1px solid #713f12;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-    .ability-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
-    }
     .ability-box {
       background-color: #0d131f;
-      padding: 14px 8px;
+      padding: 12px 8px;
       border-radius: 8px;
       text-align: center;
       border: 1px solid #1a2332;
     }
-    .ability-label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
-    .ability-val { font-size: 20px; font-weight: 800; color: #ffffff; }
+    .ability-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+    .ability-val { font-size: 18px; font-weight: 800; color: #ffffff; }
 
-    .season-record {
-      text-align: center;
-      border-top: 1px solid #232f42;
-      padding-top: 14px;
-      font-size: 14px;
-      color: #94a3b8;
-    }
+    .season-record { text-align: center; border-top: 1px solid #232f42; padding-top: 14px; font-size: 14px; color: #94a3b8; }
     .season-record span { color: #ffffff; font-weight: 700; }
 
-    /* 자산 & 평판 영역 */
-    .info-row {
-      display: flex;
-      gap: 24px;
-      margin-bottom: 16px;
-      font-size: 15px;
-      color: #94a3b8;
-    }
+    .info-row { display: flex; gap: 24px; margin-bottom: 16px; font-size: 15px; color: #94a3b8; }
     .info-row span { color: #ffffff; font-weight: 700; }
 
-    /* 다운로드 버튼 */
     .download-btn {
-      margin-top: 28px;
-      padding: 14px 28px;
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-      transition: background-color 0.2s;
+      margin-top: 28px; padding: 14px 28px; background-color: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
     }
-    .download-btn:hover { background-color: #1d4ed8; }
   </style>
 </head>
 <body>
 
-  <!-- 스탯 카드 영역 -->
   <div id="stat-card">
-    
     <!-- 좌측 컬럼 -->
     <div class="column">
-      <div class="header-box">
+      <div style="padding: 4px 4px 12px 4px;">
         <div class="location"><span id="loc">구장</span> | <span id="weather">날씨</span></div>
         <div class="datetime" id="datetime">2026.00.00 00:00</div>
-        <div class="next-tag">NEXT: <span class="next-val" id="next">경기</span></div>
+        <div class="next-tag">NEXT: <span style="color:#d1d5db;" id="next">경기</span></div>
       </div>
 
       <div class="card-box">
@@ -213,9 +98,7 @@
           <span class="stamina-title">체력 관리</span>
           <span class="stamina-num"><span id="cur-hp">0</span>/<span id="max-hp">100</span></span>
         </div>
-        <div class="bar-bg">
-          <div class="bar-fill" id="hp-bar"></div>
-        </div>
+        <div class="bar-bg"><div class="bar-fill" id="hp-bar"></div></div>
         <div class="stamina-footer">
           <span id="hp-cond">상태</span>
           <span>효율등급: <span id="eff-grade">B</span></span>
@@ -229,9 +112,7 @@
 
       <div class="card-box">
         <div class="section-title">TRAITS</div>
-        <div class="tag-container" id="traits-container">
-          <!-- JS로 태그 삽입 -->
-        </div>
+        <div class="tag-container" id="traits-container"></div>
       </div>
     </div>
 
@@ -240,15 +121,10 @@
       <div class="card-box">
         <div class="ability-header">
           <div class="section-title" style="margin: 0;">ABILITY</div>
-          <div class="position-badge" id="pos-badge">투수</div>
+          <div class="position-badge" id="pos-badge">선수</div>
         </div>
         
-        <div class="ability-grid">
-          <div class="ability-box"><div class="ability-label">구속</div><div class="ability-val" id="stat-1">-</div></div>
-          <div class="ability-box"><div class="ability-label">구위</div><div class="ability-val" id="stat-2">-</div></div>
-          <div class="ability-box"><div class="ability-label">제구</div><div class="ability-val" id="stat-3">-</div></div>
-          <div class="ability-box"><div class="ability-label">변화</div><div class="ability-val" id="stat-4">-</div></div>
-        </div>
+        <div class="ability-grid" id="ability-grid"></div>
 
         <div class="season-record">
           시즌 기록: <span id="season-rec">0.00</span>
@@ -261,13 +137,10 @@
           <div>평판: <span id="reputation-val">없음</span></div>
         </div>
         <div style="border-top: 1px solid #232f42; padding-top: 16px;">
-          <div class="tag-container" id="equip-container">
-            <!-- JS로 장비 태그 삽입 -->
-          </div>
+          <div class="tag-container" id="equip-container"></div>
         </div>
       </div>
     </div>
-
   </div>
 
   <button class="download-btn" onclick="downloadImage()">이미지 저장하기</button>
@@ -276,21 +149,18 @@
     function parseURL() {
       const urlParams = new URLSearchParams(window.location.search);
       const rawData = urlParams.get('data');
-
       if (!rawData) return;
 
       const parts = rawData.split(',');
 
-      // 1. 헤더 영역
+      // 1. 기본 정보
       document.getElementById('loc').innerText = parts[0] || '구장 미정';
       document.getElementById('weather').innerText = parts[1] || '맑음';
       document.getElementById('datetime').innerText = parts[2] || '2026.00.00 00:00';
       document.getElementById('next').innerText = parts[3] || '없음';
-
-      // 2. 최근 활동
       document.getElementById('recent-act').innerText = parts[4] || '없음';
 
-      // 3. 체력 관리
+      // 2. 체력
       const curHp = parseInt(parts[5]) || 0;
       const maxHp = parseInt(parts[6]) || 100;
       document.getElementById('cur-hp').innerText = curHp;
@@ -298,41 +168,68 @@
       document.getElementById('hp-bar').style.width = Math.min(100, Math.max(0, (curHp / maxHp) * 100)) + '%';
       document.getElementById('hp-cond').innerText = parts[7] || '보통';
 
-      // 4. 효율 & 포지션 (예: "B-투")
+      // 3. 포지션 판별
       const effAndPos = (parts[8] || 'B-투').split('-');
       document.getElementById('eff-grade').innerText = effAndPos[0] || 'B';
-      document.getElementById('pos-badge').innerText = effAndPos[1] === '투' ? '투수' : (effAndPos[1] || '선수');
+      const isPitcher = effAndPos[1] !== '타';
+      document.getElementById('pos-badge').innerText = isPitcher ? '투수' : '타자';
 
-      // 5. 능력치 (스탯)
-      document.getElementById('stat-1').innerText = parts[9] || '-';
-      document.getElementById('stat-2').innerText = parts[10] || '-';
-      document.getElementById('stat-3').innerText = parts[11] || '-';
-      document.getElementById('stat-4').innerText = parts[12] || '-';
+      // 4. 스탯 생성 로직
+      const gridContainer = document.getElementById('ability-grid');
+      gridContainer.innerHTML = '';
 
-      // 6. 특성(TRAITS), 시즌기록, 자산 분리 (예: "0.00-없음-3000만원")
-      const traitAndAsset = (parts[13] || '0.00-없음-0원').split('-');
+      let statCount = 0;
+
+      if (isPitcher) {
+        // 투수 5대 스탯 (parts[9] ~ parts[13])
+        statCount = 5;
+        gridContainer.className = 'ability-grid grid-5';
+        const pitcherStats = [
+          { label: '구삼진(K)', val: parts[9] || '-' },
+          { label: '제구(BB)', val: parts[10] || '-' },
+          { label: '피장타억제(HR)', val: parts[11] || '-' },
+          { label: '투구수관리(EFF)', val: parts[12] || '-' },
+          { label: '스태미나(STA)', val: parts[13] || '-' }
+        ];
+        pitcherStats.forEach(s => gridContainer.appendChild(createStatBox(s.label, s.val)));
+      } else {
+        // 타자 9대 스탯 (parts[9] ~ parts[17])
+        statCount = 9;
+        gridContainer.className = 'ability-grid grid-9';
+        const batterStats = [
+          { label: '컨택(CON)', val: parts[9] || '-' },
+          { label: '홈런(HOM)', val: parts[10] || '-' },
+          { label: '갭파워(GAP)', val: parts[11] || '-' },
+          { label: '선구(BALL)', val: parts[12] || '-' },
+          { label: '삼진회피(K)', val: parts[13] || '-' },
+          { label: '주루(RUN)', val: parts[14] || '-' },
+          { label: '도루(STL)', val: parts[15] || '-' },
+          { label: '호수비(NDEF)', val: parts[16] || '-' },
+          { label: '수비안정(EDEF)', val: parts[17] || '-' }
+        ];
+        batterStats.forEach(s => gridContainer.appendChild(createStatBox(s.label, s.val)));
+      }
+
+      // 5. 스탯 수에 맞춘 오프셋 계산 (parts[9 + statCount] 위치부터 시즌기록 시작)
+      const baseIndex = 9 + statCount;
+
+      const traitAndAsset = (parts[baseIndex] || '0.00-없음-0원').split('-');
       document.getElementById('season-rec').innerText = traitAndAsset[0] || '0.00';
       
-      // TRAITS 태그 생성
       const traitsContainer = document.getElementById('traits-container');
       traitsContainer.innerHTML = '';
-      const traitText = traitAndAsset[1] || '없음';
       const traitTag = document.createElement('div');
       traitTag.className = 'tag purple';
-      traitTag.innerText = traitText;
+      traitTag.innerText = traitAndAsset[1] || '없음';
       traitsContainer.appendChild(traitTag);
 
       document.getElementById('asset-val').innerText = traitAndAsset[2] || '0원';
+      document.getElementById('reputation-val').innerText = parts[baseIndex + 1] || '없음';
 
-      // 7. 평판 & 아이템 분리 (예: "주목받는+신인-유니폼", "글러브")
-      document.getElementById('reputation-val').innerText = parts[14] || '없음';
-
-      // 장비(EQUIPMENT) 태그 생성
+      // 장비 태그
       const equipContainer = document.getElementById('equip-container');
       equipContainer.innerHTML = '';
-      
-      // parts[15] 이상에 존재하는 장비 항목들을 모두 태그로 변환
-      for (let i = 15; i < parts.length; i++) {
+      for (let i = baseIndex + 2; i < parts.length; i++) {
         if (parts[i] && parts[i].trim() !== '') {
           const itemTag = document.createElement('div');
           itemTag.className = 'tag';
@@ -342,13 +239,15 @@
       }
     }
 
-    function downloadImage() {
-      const cardNode = document.getElementById('stat-card');
+    function createStatBox(label, value) {
+      const box = document.createElement('div');
+      box.className = 'ability-box';
+      box.innerHTML = `<div class="ability-label">${label}</div><div class="ability-val">${value}</div>`;
+      return box;
+    }
 
-      html2canvas(cardNode, {
-        scale: 2,
-        backgroundColor: null
-      }).then(canvas => {
+    function downloadImage() {
+      html2canvas(document.getElementById('stat-card'), { scale: 2, backgroundColor: null }).then(canvas => {
         const link = document.createElement('a');
         link.download = 'stat-card.png';
         link.href = canvas.toDataURL('image/png');
